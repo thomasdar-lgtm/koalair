@@ -162,6 +162,7 @@ class NightEndReceiver : BroadcastReceiver() {
             try {
                 val turnOff = Night.cfg(app, puid).endOff
                 val ok = runCatching { Night.stop(app, Session(app), puid, turnOff) }.isSuccess
+                KoalairWidget.render(app)
                 // Pas de réseau au réveil ? Nouvel essai dans 2 min, 5 fois maximum.
                 if (!ok && attempt < 5) Night.schedule(app, puid, System.currentTimeMillis() + 120_000, attempt + 1)
             } finally {

@@ -50,6 +50,7 @@ class Clims(private val ctx: android.content.Context, private val session: Sessi
             val r = withContext(Dispatchers.IO) { runCatching { Night.start(ctx, session, d, c) } }
             nightBusy = null
             nightVersion++
+            KoalairWidget.render(ctx)
             r.onFailure { error = "Mode nuit non lancé : ${it.message}" }.onSuccess {
                 devices = devices.map { x -> if (x.puid == d.puid) x.copy(status = x.status + Night.startProps(c)) else x }
                 scheduleRefresh(4000)
@@ -63,6 +64,7 @@ class Clims(private val ctx: android.content.Context, private val session: Sessi
             val r = withContext(Dispatchers.IO) { runCatching { Night.stop(ctx, session, puid, turnOff) } }
             nightBusy = null
             nightVersion++
+            KoalairWidget.render(ctx)
             r.onFailure { error = "Arrêt du mode nuit impossible : ${it.message}" }.onSuccess { scheduleRefresh(3000) }
         }
     }
@@ -78,6 +80,8 @@ class Clims(private val ctx: android.content.Context, private val session: Sessi
                 devices = list.map { applyPending(it) }
                 lastUpdate = System.currentTimeMillis()
                 error = null
+                json.optJSONArray("deviceList")?.let { Cache.save(ctx, it) }
+                KoalairWidget.render(ctx)
             }.onFailure { error = it.message ?: it.toString() }
         }
     }

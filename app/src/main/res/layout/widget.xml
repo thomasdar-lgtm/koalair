@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/root"
+    android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical"
+    android:background="@drawable/widget_bg" android:padding="12dp">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Koa"
+            android:textColor="#FFD23F" android:textSize="15sp" android:textStyle="bold" />
+        <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="lair"
+            android:textColor="#6FD3FF" android:textSize="15sp" android:textStyle="bold" />
+        <TextView android:id="@+id/updated" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:textColor="#8C9AB8" android:textSize="11sp" />
+    </LinearLayout>
+    <TextView android:id="@+id/empty" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+        android:gravity="center" android:text="Ouvre Koalair pour te connecter" android:textColor="#8C9AB8" android:textSize="13sp" />
+    <LinearLayout android:id="@+id/row1" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+        android:orientation="horizontal" android:gravity="center_vertical" android:paddingTop="4dp" android:paddingBottom="4dp">
+        <LinearLayout android:id="@+id/info1" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:orientation="vertical">
+            <TextView android:id="@+id/name1" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:textColor="#FFFFFF" android:textSize="16sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/detail1" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:textColor="#8C9AB8" android:textSize="12sp" android:maxLines="1" android:ellipsize="end" />
+        </LinearLayout>
+        <ImageView android:id="@+id/night1" android:layout_width="42dp" android:layout_height="42dp" android:padding="10dp"
+            android:src="@drawable/wic_moon" android:background="@drawable/wbtn_off" android:contentDescription="Mode nuit" />
+        <ImageView android:id="@+id/power1" android:layout_width="42dp" android:layout_height="42dp" android:layout_marginStart="8dp"
+            android:padding="10dp" android:src="@drawable/wic_power" android:background="@drawable/wbtn_off" android:contentDescription="Marche" />
+    </LinearLayout>
+    <LinearLayout android:id="@+id/row2" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+        android:orientation="horizontal" android:gravity="center_vertical" android:paddingTop="4dp" android:paddingBottom="4dp">
+        <LinearLayout android:id="@+id/info2" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:orientation="vertical">
+            <TextView android:id="@+id/name2" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:textColor="#FFFFFF" android:textSize="16sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/detail2" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:textColor="#8C9AB8" android:textSize="12sp" android:maxLines="1" android:ellipsize="end" />
+        </LinearLayout>
+        <ImageView android:id="@+id/night2" android:layout_width="42dp" android:layout_height="42dp" android:padding="10dp"
+            android:src="@drawable/wic_moon" android:background="@drawable/wbtn_off" android:contentDescription="Mode nuit" />
+        <ImageView android:id="@+id/power2" android:layout_width="42dp" android:layout_height="42dp" android:layout_marginStart="8dp"
+            android:padding="10dp" android:src="@drawable/wic_power" android:background="@drawable/wbtn_off" android:contentDescription="Marche" />
+    </LinearLayout>
+</LinearLayout>
