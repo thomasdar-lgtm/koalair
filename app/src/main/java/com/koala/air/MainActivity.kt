@@ -445,12 +445,6 @@ fun DetailScreen(d: Device, clims: Clims, onBack: () -> Unit) {
             Tile("Éteindre", G.Bulb, false, Muted, Modifier.weight(1f)) { send("t_dimmer" to "0") }
         }
 
-        SectionTitle("Bip de la clim", "Réglage en test : dis-moi si la clim réagit")
-        Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Tile("Activer", G.Bolt, false, Yellow, Modifier.weight(1f)) { send("t_beep" to "1") }
-            Tile("Couper", G.Mute, false, Muted, Modifier.weight(1f)) { send("t_beep" to "0") }
-        }
-
         val errors = s.filter { it.key.startsWith("f_e_") && it.value != "0" }.keys
         if (errors.isNotEmpty()) {
             Spacer(Modifier.height(12.dp))
