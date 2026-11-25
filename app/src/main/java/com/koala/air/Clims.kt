@@ -24,7 +24,7 @@ object Ac {
 }
 
 /** État partagé des clims + envoi des commandes. */
-class Clims(private val session: Session, private val scope: CoroutineScope) {
+class Clims(private val ctx: android.content.Context, private val session: Session, private val scope: CoroutineScope) {
     var devices by mutableStateOf<List<Device>>(emptyList())
     var raw by mutableStateOf<JSONObject?>(null)
     var loading by mutableStateOf(false)
@@ -36,7 +36,36 @@ class Clims(private val session: Session, private val scope: CoroutineScope) {
     private var refreshJob: Job? = null
     private var tempJob: Job? = null
 
+    /** Change à chaque début/fin de mode nuit, pour que l'écran relise l'état. */
+    var nightVersion by mutableStateOf(0)
+    var nightBusy by mutableStateOf<String?>(null)
+
     fun device(puid: String) = devices.firstOrNull { it.puid == puid }
+
+    fun nightRun(puid: String): NightRun? = Night.run(ctx, puid).also { nightVersion }
+
+    fun startNight(d: Device, c: NightCfg) {
+        nightBusy = d.puid
+        scope.launch {
+            val r = withContext(Dispatchers.IO) { runCatching { Night.start(ctx, session, d, c) } }
+            nightBusy = null
+            nightVersion++
+            r.onFailure { error = "Mode nuit non lancé : ${it.message}" }.onSuccess {
+                devices = devices.map { x -> if (x.puid == d.puid) x.copy(status = x.status + Night.startProps(c)) else x }
+                scheduleRefresh(4000)
+            }
+        }
+    }
+
+    fun stopNight(puid: String, turnOff: Boolean) {
+        nightBusy = puid
+        scope.launch {
+            val r = withContext(Dispatchers.IO) { runCatching { Night.stop(ctx, session, puid, turnOff) } }
+            nightBusy = null
+            nightVersion++
+            r.onFailure { error = "Arrêt du mode nuit impossible : ${it.message}" }.onSuccess { scheduleRefresh(3000) }
+        }
+    }
 
     fun refresh() {
         if (loading) return

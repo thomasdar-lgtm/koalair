@@ -102,7 +102,8 @@ fun App(session: Session) {
 @Composable
 fun Main(session: Session, onLogout: () -> Unit) {
     val scope = rememberCoroutineScope()
-    val clims = remember { Clims(session, scope) }
+    val appCtx = LocalContext.current.applicationContext
+    val clims = remember { Clims(appCtx, session, scope) }
     var open by remember { mutableStateOf<String?>(null) }
     // Actualisation toutes les 60 s tant que l'appli est à l'écran (pas plus : le serveur bannit les abus)
     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -299,12 +300,17 @@ fun HomeCard(d: Device, clims: Clims, onOpen: (String) -> Unit) {
                 }
             }
         }
-        if (on) {
+        val night = clims.nightRun(d.puid)
+        if (night != null) {
             Spacer(Modifier.height(12.dp))
+            Pill(G.Moon, if (night.endAt == 0L) "Mode nuit · sans fin" else "Mode nuit · fin à ${Night.hhmm(minutesOf(night.endAt))}", Lavender)
+        }
+        if (on) {
+            Spacer(Modifier.height(if (night != null) 6.dp else 12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Pill(G.Fan, Ac.fanName(s["t_fan_speed"]), Soft, spin = true)
                 if (s["t_up_down"] == "1") Pill(G.Swing, "Balayage", Soft)
-                if (s["t_sleep"].let { it != null && it != "0" }) Pill(G.Moon, "Sommeil", Lavender)
+                if (s["t_sleep"].let { it != null && it != "0" }) Pill(G.Moon, "Sommeil clim", Lavender)
                 if (s["t_eco"] == "1") Pill(G.Leaf, "Éco", Teal)
                 if (s["t_fan_mute"] == "1") Pill(G.Mute, "Silence", Soft)
                 if (s["t_super"] == "1") Pill(G.Bolt, "Turbo", Yellow)
@@ -348,6 +354,9 @@ fun DetailScreen(d: Device, clims: Clims, onBack: () -> Unit) {
             PowerButton(on, modeColor(mode), 72.dp) { send("t_power" to if (on) "0" else "1") }
             RoundIcon(G.Plus, { clims.setTemp(d.puid, (temp ?: Ac.MIN_TEMP) + 1) }, 58.dp, Card, Color.White, temp != null)
         }
+
+        Spacer(Modifier.height(14.dp))
+        NightSection(d, clims)
 
         SectionTitle("Mode")
         Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
