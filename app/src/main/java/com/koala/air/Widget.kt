@@ -9,9 +9,6 @@ import android.content.Intent
 import android.widget.RemoteViews
 import org.json.JSONArray
 import org.json.JSONObject
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import kotlin.concurrent.thread
 
 /** Dernier état connu des clims, partagé entre l'appli et le widget. */
@@ -130,13 +127,11 @@ class KoalairWidget : AppWidgetProvider() {
             )
             v.setOnClickPendingIntent(R.id.root, open)
             val devices = if (Session(ctx).loggedIn) Cache.devices(ctx) else emptyList()
-            val at = Cache.at(ctx)
-            v.setTextViewText(R.id.updated, if (at > 0) SimpleDateFormat("HH:mm", Locale.FRANCE).format(Date(at)) else "")
             v.setViewVisibility(R.id.empty, if (devices.isEmpty()) android.view.View.VISIBLE else android.view.View.GONE)
 
             val rows = listOf(
-                Row(R.id.row1, R.id.info1, R.id.name1, R.id.detail1, R.id.night1, R.id.power1),
-                Row(R.id.row2, R.id.info2, R.id.name2, R.id.detail2, R.id.night2, R.id.power2),
+                Row(R.id.row1, R.id.info1, R.id.name1, R.id.detail1, R.id.room1, R.id.night1, R.id.power1),
+                Row(R.id.row2, R.id.info2, R.id.name2, R.id.detail2, R.id.room2, R.id.night2, R.id.power2),
             )
             rows.forEachIndexed { i, r ->
                 val d = devices.getOrNull(i)
@@ -146,11 +141,8 @@ class KoalairWidget : AppWidgetProvider() {
                 val on = s["t_power"] == "1"
                 val night = Night.run(ctx, d.puid)
                 v.setTextViewText(r.name, d.name)
-                v.setTextViewText(r.detail, buildString {
-                    append(if (on) "${Ac.modeName(s["t_work_mode"])} ${s["t_temp"]}°" else "Éteinte")
-                    append(" · pièce ${s["f_temp_in"] ?: "?"}°")
-                    if (night != null) append(if (night.endAt == 0L) " · nuit" else " · nuit → ${Night.hhmm(minutesOf(night.endAt))}")
-                })
+                v.setTextViewText(r.detail, if (on) "${Ac.modeName(s["t_work_mode"])} ${s["t_temp"]}°" else "Éteinte")
+                v.setTextViewText(r.room, "Pièce ${s["f_temp_in"] ?: "?"}°")
                 v.setInt(r.power, "setBackgroundResource", if (on) modeBtn(s["t_work_mode"]) else R.drawable.wbtn_off)
                 v.setInt(r.power, "setColorFilter", if (on) NAVY else MUTED)
                 v.setInt(r.night, "setBackgroundResource", if (night != null) R.drawable.wbtn_lav else R.drawable.wbtn_off)
@@ -162,6 +154,6 @@ class KoalairWidget : AppWidgetProvider() {
             mgr.updateAppWidget(ids, v)
         }
 
-        private data class Row(val row: Int, val info: Int, val name: Int, val detail: Int, val night: Int, val power: Int)
+        private data class Row(val row: Int, val info: Int, val name: Int, val detail: Int, val room: Int, val night: Int, val power: Int)
     }
 }
