@@ -288,6 +288,8 @@ fun HomeCard(d: Device, clims: Clims, onOpen: (String) -> Unit) {
                 Text(d.name, fontSize = 22.sp, fontWeight = FontWeight.Black)
                 Text(if (on) Ac.modeName(mode) else "Éteinte", color = accent, fontSize = 13.sp, fontWeight = FontWeight.Bold)
             }
+            NightButton(d, clims)
+            Spacer(Modifier.width(10.dp))
             PowerButton(on, modeColor(mode), 56.dp) { clims.send(d.puid, mapOf("t_power" to if (on) "0" else "1")) }
         }
         Spacer(Modifier.height(14.dp))
@@ -323,6 +325,25 @@ fun HomeCard(d: Device, clims: Clims, onOpen: (String) -> Unit) {
                 if (s["t_super"] == "1") Pill(G.Bolt, "Turbo", Yellow)
             }
         }
+    }
+}
+
+/** Bouton lune : lance le mode nuit avec les réglages de la page de la clim, ou l'arrête. */
+@Composable
+fun NightButton(d: Device, clims: Clims) {
+    val ctx = LocalContext.current
+    val active = clims.nightRun(d.puid) != null
+    val bg by animateColorAsState(if (active) Lavender else CardHi, tween(400), label = "nbg")
+    Box(
+        Modifier.size(56.dp).clip(CircleShape).background(bg)
+            .border(2.dp, if (active) Lavender.copy(alpha = 0.5f) else Line, CircleShape)
+            .clickable(enabled = clims.nightBusy == null) {
+                if (active) clims.stopNight(d.puid, turnOff = false) else clims.startNight(d, Night.cfg(ctx, d.puid))
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        if (clims.nightBusy == d.puid) CircularProgressIndicator(color = if (active) Navy else Lavender, strokeWidth = 2.5.dp, modifier = Modifier.size(24.dp))
+        else Glyph(G.Moon, if (active) Navy else Lavender, 26.dp)
     }
 }
 
