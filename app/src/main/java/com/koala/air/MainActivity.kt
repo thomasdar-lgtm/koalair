@@ -18,6 +18,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -58,6 +59,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -211,7 +213,12 @@ fun HomeScreen(clims: Clims, email: String, onOpen: (String) -> Unit, onLogout: 
     var tick by remember { mutableLongStateOf(0L) }
     LaunchedEffect(Unit) { while (true) { delay(1000); tick++ } }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        Row(Modifier.fillMaxWidth().padding(start = 22.dp, end = 16.dp, top = 18.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            Image(
+                painterResource(R.drawable.logo), contentDescription = null,
+                modifier = Modifier.size(52.dp).clip(RoundedCornerShape(14.dp)),
+            )
+            Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Logo()
                 val n = clims.devices.size
@@ -473,9 +480,10 @@ fun LoginScreen(session: Session, onDone: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(Modifier.height(48.dp))
-        Box(Modifier.size(96.dp).clip(CircleShape).background(Card).border(1.dp, Line, CircleShape), contentAlignment = Alignment.Center) {
-            Glyph(G.Snow, Ice, 48.dp)
-        }
+        Image(
+            painterResource(R.drawable.logo), contentDescription = "Koalair",
+            modifier = Modifier.size(170.dp).clip(RoundedCornerShape(36.dp)).border(1.dp, Line, RoundedCornerShape(36.dp)),
+        )
         Spacer(Modifier.height(16.dp))
         Logo(42)
         Text("Tes clims, sans prise de tête", color = Muted, fontSize = 14.sp)
