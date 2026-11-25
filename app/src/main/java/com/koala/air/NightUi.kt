@@ -143,6 +143,31 @@ fun NightSection(d: Device, clims: Clims) {
             color = Muted, fontSize = 11.sp, modifier = Modifier.padding(top = 10.dp),
         )
 
+        Field("Lancement automatique") {
+            Seg("Non", !cfg.autoEnabled, modifier = Modifier.weight(1f)) { upd(cfg.copy(autoEnabled = false)) }
+            Seg("Chaque soir", cfg.autoEnabled, modifier = Modifier.weight(1f)) { upd(cfg.copy(autoEnabled = true)) }
+        }
+        if (cfg.autoEnabled) {
+            Field("Heure de lancement") {
+                Stepper(
+                    Night.hhmm(cfg.autoMinutes),
+                    { upd(cfg.copy(autoMinutes = (cfg.autoMinutes - 15 + 1440) % 1440)) },
+                    { upd(cfg.copy(autoMinutes = (cfg.autoMinutes + 15) % 1440)) },
+                )
+            }
+            Field("Jours") {
+                listOf("L", "M", "M", "J", "V", "S", "D").forEachIndexed { i, l ->
+                    val on = (cfg.autoDays and (1 shl i)) != 0
+                    Seg(l, on, modifier = Modifier.weight(1f)) { upd(cfg.copy(autoDays = cfg.autoDays xor (1 shl i))) }
+                }
+            }
+            val next = Night.nextAuto(cfg.autoMinutes, cfg.autoDays)
+            Text(
+                if (next == 0L) "Aucun jour choisi" else "Prochain lancement : ${dayTime(next)}",
+                color = Lavender, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp),
+            )
+        }
+
         Spacer(Modifier.height(16.dp))
         if (busy) {
             Box(Modifier.fillMaxWidth().height(52.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Lavender, modifier = Modifier.size(26.dp)) }
@@ -163,6 +188,15 @@ fun BigButton(label: String, bg: Color, fg: Color = Navy, modifier: Modifier = M
         modifier.height(52.dp).clip(RoundedCornerShape(16.dp)).background(bg).clickable { onClick() },
         contentAlignment = Alignment.Center,
     ) { Text(label, color = fg, fontSize = 16.sp, fontWeight = FontWeight.Black) }
+}
+
+fun dayTime(ms: Long): String {
+    val now = java.util.Calendar.getInstance()
+    val c = java.util.Calendar.getInstance().apply { timeInMillis = ms }
+    val sameDay = now.get(java.util.Calendar.YEAR) == c.get(java.util.Calendar.YEAR) &&
+        now.get(java.util.Calendar.DAY_OF_YEAR) == c.get(java.util.Calendar.DAY_OF_YEAR)
+    val day = if (sameDay) "ce soir" else java.text.SimpleDateFormat("EEEE", java.util.Locale.FRANCE).format(java.util.Date(ms))
+    return "$day à ${Night.hhmm(minutesOf(ms))}"
 }
 
 fun minutesOf(ms: Long): Int {
