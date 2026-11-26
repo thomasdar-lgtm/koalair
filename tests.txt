@@ -1,0 +1,12 @@
+<testsuite name="com.koala.air.NightTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-26T03:13:31.805Z" hostname="runnervm0hi8g" time="0.012">
+<testcase name="autoNoDays"
+<testcase name="autoAfterTimeGoesTomorrow"
+<testcase name="endTomorrowMorning"
+<testcase name="endLaterToday"
+<testcase name="hhmm"
+<testcase name="propsNeverUseClimSleep"
+<testcase name="autoSkipsUncheckedDays"
+<testcase name="autoTonight"
+<testsuite name="com.koala.air.SignTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-26T03:13:31.820Z" hostname="runnervm0hi8g" time="0.065">
+<testcase name="compactJsonMatchesPython"
+<testcase name="canonicalMatchesPythonLibrary"
