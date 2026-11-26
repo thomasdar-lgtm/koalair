@@ -4,6 +4,14 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.draw.rotate
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -74,6 +82,8 @@ fun NightSection(d: Device, clims: Clims) {
     val run = clims.nightRun(d.puid)
     val busy = clims.nightBusy == d.puid
     val shape = RoundedCornerShape(24.dp)
+    var open by rememberSaveable(d.puid) { mutableStateOf(false) }
+    val arrow by animateFloatAsState(if (open) 90f else -90f, label = "arrow")
 
     Column(
         Modifier.padding(horizontal = 16.dp, vertical = 6.dp).fillMaxWidth().clip(shape)
@@ -82,7 +92,10 @@ fun NightSection(d: Device, clims: Clims) {
             .border(1.dp, if (run != null) Lavender.copy(alpha = 0.5f) else Line, shape)
             .padding(16.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).clickable { open = !open },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Box(Modifier.size(42.dp).clip(CircleShape).background(Lavender.copy(alpha = 0.18f)), contentAlignment = Alignment.Center) {
                 Glyph(G.Moon, Lavender, 22.dp)
             }
@@ -91,81 +104,90 @@ fun NightSection(d: Device, clims: Clims) {
                 Text("Mode nuit", fontSize = 20.sp, fontWeight = FontWeight.Black)
                 Text(
                     when {
-                        run == null -> "La clim ne s'éteint pas toute seule"
+                        run == null -> buildString {
+                            append("${cfg.temp}° · ${if (cfg.fan == "0") "vitesse auto" else "vitesse ${Ac.FANS.indexOfFirst { it.first == cfg.fan }}"}")
+                            if (cfg.screenOff) append(" · écran éteint")
+                            if (cfg.autoEnabled) append(" · auto ${Night.hhmm(cfg.autoMinutes)}")
+                        }
                         run.endAt == 0L -> "Actif · sans fin"
                         else -> "Actif · fin à ${Night.hhmm(minutesOf(run.endAt))} → ${if (cfg.endOff) "extinction" else "réglages d'avant"}"
                     },
                     color = if (run != null) Lavender else Muted, fontSize = 13.sp, fontWeight = FontWeight.Bold,
                 )
             }
+            Glyph(G.Back, Muted, 20.dp, Modifier.rotate(arrow))
         }
 
-        Field("Température") {
-            Stepper("${cfg.temp}°", { upd(cfg.copy(temp = (cfg.temp - 1).coerceAtLeast(Ac.MIN_TEMP))) }, { upd(cfg.copy(temp = (cfg.temp + 1).coerceAtMost(Ac.MAX_TEMP))) })
-        }
-        Field("Ventilation") {
-            Ac.FANS.forEach { (v, label) -> Seg(label, cfg.fan == v, modifier = Modifier.weight(1f)) { upd(cfg.copy(fan = v)) } }
-        }
-        Field("Écran de la clim") {
-            Seg("Éteint", cfg.screenOff, modifier = Modifier.weight(1f)) { upd(cfg.copy(screenOff = true)) }
-            Seg("Allumé", !cfg.screenOff, modifier = Modifier.weight(1f)) { upd(cfg.copy(screenOff = false)) }
-        }
-        Field("Fin du mode nuit") {
-            Seg("Sans fin", !cfg.endEnabled, modifier = Modifier.weight(1f)) { upd(cfg.copy(endEnabled = false)) }
-            Seg("À heure fixe", cfg.endEnabled, modifier = Modifier.weight(1f)) { upd(cfg.copy(endEnabled = true)) }
-        }
-        if (cfg.endEnabled) {
-            Field("Heure de fin") {
-                Stepper(
-                    Night.hhmm(cfg.endMinutes),
-                    { upd(cfg.copy(endMinutes = (cfg.endMinutes - 15 + 1440) % 1440)) },
-                    { upd(cfg.copy(endMinutes = (cfg.endMinutes + 15) % 1440)) },
-                )
+        AnimatedVisibility(open, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
+            Column {
+            Field("Température") {
+                Stepper("${cfg.temp}°", { upd(cfg.copy(temp = (cfg.temp - 1).coerceAtLeast(Ac.MIN_TEMP))) }, { upd(cfg.copy(temp = (cfg.temp + 1).coerceAtMost(Ac.MAX_TEMP))) })
             }
-            Field("À l'heure de fin") {
-                Seg("Réglages d'avant", !cfg.endOff, modifier = Modifier.weight(1f)) { upd(cfg.copy(endOff = false)) }
-                Seg("Éteindre", cfg.endOff, modifier = Modifier.weight(1f)) { upd(cfg.copy(endOff = true)) }
+            Field("Ventilation") {
+                Ac.FANS.forEach { (v, label) -> Seg(label, cfg.fan == v, modifier = Modifier.weight(1f)) { upd(cfg.copy(fan = v)) } }
             }
-            if (!Night.canExact(ctx) && Build.VERSION.SDK_INT >= 31) {
-                Text(
-                    "Pour une fin pile à l'heure, autorise les alarmes pour Koalair (sinon Android peut la décaler de quelques minutes). Toucher ici.",
-                    color = Yellow, fontSize = 12.sp,
-                    modifier = Modifier.padding(top = 10.dp).clickable {
-                        runCatching {
-                            ctx.startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:${ctx.packageName}")))
-                        }
-                    },
-                )
+            Field("Écran de la clim") {
+                Seg("Éteint", cfg.screenOff, modifier = Modifier.weight(1f)) { upd(cfg.copy(screenOff = true)) }
+                Seg("Allumé", !cfg.screenOff, modifier = Modifier.weight(1f)) { upd(cfg.copy(screenOff = false)) }
             }
-        }
-        if (cfg.endEnabled) Text(
-            "Le téléphone envoie la commande de fin : il doit rester allumé avec internet.",
-            color = Muted, fontSize = 11.sp, modifier = Modifier.padding(top = 10.dp),
-        )
-
-        Field("Lancement automatique") {
-            Seg("Non", !cfg.autoEnabled, modifier = Modifier.weight(1f)) { upd(cfg.copy(autoEnabled = false)) }
-            Seg("Chaque soir", cfg.autoEnabled, modifier = Modifier.weight(1f)) { upd(cfg.copy(autoEnabled = true)) }
-        }
-        if (cfg.autoEnabled) {
-            Field("Heure de lancement") {
-                Stepper(
-                    Night.hhmm(cfg.autoMinutes),
-                    { upd(cfg.copy(autoMinutes = (cfg.autoMinutes - 15 + 1440) % 1440)) },
-                    { upd(cfg.copy(autoMinutes = (cfg.autoMinutes + 15) % 1440)) },
-                )
+            Field("Fin du mode nuit") {
+                Seg("Sans fin", !cfg.endEnabled, modifier = Modifier.weight(1f)) { upd(cfg.copy(endEnabled = false)) }
+                Seg("À heure fixe", cfg.endEnabled, modifier = Modifier.weight(1f)) { upd(cfg.copy(endEnabled = true)) }
             }
-            Field("Jours") {
-                listOf("L", "M", "M", "J", "V", "S", "D").forEachIndexed { i, l ->
-                    val on = (cfg.autoDays and (1 shl i)) != 0
-                    Seg(l, on, modifier = Modifier.weight(1f)) { upd(cfg.copy(autoDays = cfg.autoDays xor (1 shl i))) }
+            if (cfg.endEnabled) {
+                Field("Heure de fin") {
+                    Stepper(
+                        Night.hhmm(cfg.endMinutes),
+                        { upd(cfg.copy(endMinutes = (cfg.endMinutes - 15 + 1440) % 1440)) },
+                        { upd(cfg.copy(endMinutes = (cfg.endMinutes + 15) % 1440)) },
+                    )
+                }
+                Field("À l'heure de fin") {
+                    Seg("Réglages d'avant", !cfg.endOff, modifier = Modifier.weight(1f)) { upd(cfg.copy(endOff = false)) }
+                    Seg("Éteindre", cfg.endOff, modifier = Modifier.weight(1f)) { upd(cfg.copy(endOff = true)) }
+                }
+                if (!Night.canExact(ctx) && Build.VERSION.SDK_INT >= 31) {
+                    Text(
+                        "Pour une fin pile à l'heure, autorise les alarmes pour Koalair (sinon Android peut la décaler de quelques minutes). Toucher ici.",
+                        color = Yellow, fontSize = 12.sp,
+                        modifier = Modifier.padding(top = 10.dp).clickable {
+                            runCatching {
+                                ctx.startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:${ctx.packageName}")))
+                            }
+                        },
+                    )
                 }
             }
-            val next = Night.nextAuto(cfg.autoMinutes, cfg.autoDays)
-            Text(
-                if (next == 0L) "Aucun jour choisi" else "Prochain lancement : ${dayTime(next)}",
-                color = Lavender, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp),
+            if (cfg.endEnabled) Text(
+                "Le téléphone envoie la commande de fin : il doit rester allumé avec internet.",
+                color = Muted, fontSize = 11.sp, modifier = Modifier.padding(top = 10.dp),
             )
+
+            Field("Lancement automatique") {
+                Seg("Non", !cfg.autoEnabled, modifier = Modifier.weight(1f)) { upd(cfg.copy(autoEnabled = false)) }
+                Seg("Chaque soir", cfg.autoEnabled, modifier = Modifier.weight(1f)) { upd(cfg.copy(autoEnabled = true)) }
+            }
+            if (cfg.autoEnabled) {
+                Field("Heure de lancement") {
+                    Stepper(
+                        Night.hhmm(cfg.autoMinutes),
+                        { upd(cfg.copy(autoMinutes = (cfg.autoMinutes - 15 + 1440) % 1440)) },
+                        { upd(cfg.copy(autoMinutes = (cfg.autoMinutes + 15) % 1440)) },
+                    )
+                }
+                Field("Jours") {
+                    listOf("L", "M", "M", "J", "V", "S", "D").forEachIndexed { i, l ->
+                        val on = (cfg.autoDays and (1 shl i)) != 0
+                        Seg(l, on, modifier = Modifier.weight(1f)) { upd(cfg.copy(autoDays = cfg.autoDays xor (1 shl i))) }
+                    }
+                }
+                val next = Night.nextAuto(cfg.autoMinutes, cfg.autoDays)
+                Text(
+                    if (next == 0L) "Aucun jour choisi" else "Prochain lancement : ${dayTime(next)}",
+                    color = Lavender, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp),
+                )
+            }
+            }
         }
 
         Spacer(Modifier.height(16.dp))
